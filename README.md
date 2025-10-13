@@ -10,18 +10,18 @@ A simple shell tool to auto-generate and integrate Android ROM signing keys (inc
 
 **Manual mode (confirm prompts manually):**
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/main/Signify.sh)
+bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/private/Signify.sh)
 ```
 
 **Auto mode (skip all prompts):**
 ```bash
-echo "no" | bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/main/Signify.sh)
+echo "no" | bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/private/Signify.sh)
 ```
 
 ---
 
 ## 📁 Output
-- Keys saved in `vendor/signify/keys`
+- Keys saved in `vendor/private/keys`
 - Auto-generated:
   - `Android.bp`
   - `keys.mk`
@@ -33,7 +33,7 @@ echo "no" | bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/ma
 ## ⚙️ Device Integration
 Add to your `device.mk` or `common.mk`:
 ```makefile
-$(call inherit-product, vendor/signify/keys/keys.mk)
+$(call inherit-product, vendor/private/keys/keys.mk)
 ```
 
 Build normally:

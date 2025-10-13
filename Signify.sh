@@ -4,10 +4,10 @@
 # Script Name : Signify.sh
 # Author      : TopexGuy
 # Description : ROM signing key generator & manager
-# Key Folder  : Default = vendor/signify/keys (configurable via KEYS_DIR)
+# Key Folder  : Default = vendor/private/keys (configurable via KEYS_DIR)
 
 # ====== CONFIGURATION ======
-KEYS_DIR="vendor/signify/keys"
+KEYS_DIR="vendor/private/keys"
 mkdir -p "$KEYS_DIR"
 # ===========================
 
