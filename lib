@@ -1,0 +1,126 @@
+# SPDX-License-Identifier: Apache-2.0
+# Signify base
+
+[[ "${BASH_SOURCE[0]}" != "$0" ]] || {
+    echo "This file is part of Signify. Do not run directly."
+    exit 1
+}
+
+# ==============================
+# HELPER FUNCTIONS
+# ==============================
+green()  { echo -e "\e[1;32m$1\e[0m"; }
+yellow() { echo -e "\e[1;33m$1\e[0m"; }
+
+confirm() {
+    while true; do
+        read -r -p "$1 (yes/no): " input
+        case "$input" in
+            [yY][eE][sS]|[yY]) echo "yes"; return ;;
+            [nN][oO]|[nN]) echo "no"; return ;;
+        esac
+    done
+}
+
+prompt() {
+    while true; do
+        read -p "$1" input
+        [[ -n "$input" ]] && echo "$input" && return
+    done
+}
+
+prompt_key_size() {
+    while true; do
+        read -p "$1" input
+        [[ "$input" == "2048" || "$input" == "4096" ]] && echo "$input" && return
+    done
+}
+
+# ==============================
+# PATHS (ROM ROOT SAFE)
+# ==============================
+if [[ -z "$ROM_ROOT" ]]; then
+    echo "Error: ROM_ROOT not set. Run Signify from ROM root."
+    exit 1
+fi
+
+MAKE_KEY="$ROM_ROOT/development/tools/make_key"
+
+# ==============================
+# MAIN FUNCTIONS
+# ==============================
+generate_certificates() {
+	mkdir -p "$KEYS_DIR"
+    if [ ! -x "$MAKE_KEY" ]; then
+        echo "Error: make_key not found at $MAKE_KEY"
+        exit 1
+    fi
+
+    green "\n→ Generating certificates inside $KEYS_DIR..."
+
+    # 🔥 FIX: make_key exits non-zero in non-TTY
+    set +e
+
+    for certificate in "${certificates[@]}" "${apex_certificates[@]}"; do
+
+        if [[ " ${certificates[*]} " == *" $certificate "* ]]; then
+            cert_name="$certificate"
+        else
+            safe="${certificate//./_}"
+            cert_name="${safe}.certificate.override"
+        fi
+
+        if [[ -f "$KEYS_DIR/$cert_name.pk8" || -f "$KEYS_DIR/$cert_name.x509.pem" ]]; then
+            echo "• $cert_name already exists → skipped"
+            continue
+        fi
+
+        echo "• Generating $cert_name ..."
+        bash "$MAKE_KEY" "$KEYS_DIR/$cert_name" "$SUBJECT"
+    done
+
+    set -e
+
+    create_releasekey
+    write_android_bp
+    write_product_keys_mk
+}
+
+create_releasekey() {
+    if [[ -f "$KEYS_DIR/releasekey.pk8" && -f "$KEYS_DIR/releasekey.x509.pem" ]]; then
+        yellow "→ releasekey already exists — skipping"
+        return
+    fi
+
+    green "\n→ Generating releasekey..."
+    bash "$MAKE_KEY" "$KEYS_DIR/releasekey" "$SUBJECT" || true
+}
+
+write_android_bp() {
+    green "→ Writing Android.bp..."
+    {
+        for apex in "${apex_certificates[@]}"; do
+            safe="${apex//./_}"
+            echo "android_app_certificate {"
+            echo "    name: \"$safe.certificate.override\","
+            echo "    certificate: \"$safe.certificate.override\","
+            echo "}"
+            echo ""
+        done
+    } > "$KEYS_DIR/Android.bp"
+}
+
+write_product_keys_mk() {
+    green "→ Writing product keys.mk..."
+    {
+        echo "PRODUCT_CERTIFICATE_OVERRIDES := \\"
+        for apex in "${apex_certificates[@]}"; do
+            safe="${apex//./_}"
+            echo "    $apex:$safe.certificate.override \\"
+        done
+        echo ""
+        echo "PRODUCT_DEFAULT_DEV_CERTIFICATE := $KEYS_DIR/releasekey"
+        echo "PRODUCT_OTA_PUBLIC_KEYS := $KEYS_DIR/otakey.x509.pem"
+        echo "PRODUCT_EXTRA_RECOVERY_KEYS :="
+    } > "$KEYS_DIR/keys.mk"
+}
