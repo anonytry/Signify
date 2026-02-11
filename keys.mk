@@ -63,6 +63,7 @@ apex_certificates=(
     com.android.support.apexer
     com.android.telephony
     com.android.telephonymodules
+    com.android.telephonycore
     com.android.tethering
     com.android.tzdata
     com.android.uwb
@@ -75,4 +76,18 @@ apex_certificates=(
     com.google.pixel.camera.hal
     com.google.pixel.vibrator.hal
     com.qorvo.uwb
+    com.android.hardware.threadnetwork
+    com.android.hardware.vibrator
+    com.android.hardware.contexthub
+    com.android.hardware.gatekeeper.nonsecure
+    com.android.hardware.dumpstate
+    com.android.hardware.power
+    com.android.crashrecovery
+    com.android.uprobestats
+    com.android.bt
+    com.android.appsearch.apk
+    com.android.hardware.authsecret
+    com.android.hardware.rebootescrow
+    com.android.nfcservices
+    com.android.profiling
 )
