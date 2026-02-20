@@ -37,7 +37,7 @@ prompt_key_size() {
 }
 
 # ==============================
-# PATHS (ROM ROOT SAFE)
+# PATHS
 # ==============================
 if [[ -z "$ROM_ROOT" ]]; then
     echo "Error: ROM_ROOT not set. Run Signify from ROM root."
@@ -50,7 +50,8 @@ MAKE_KEY="$ROM_ROOT/development/tools/make_key"
 # MAIN FUNCTIONS
 # ==============================
 generate_certificates() {
-	mkdir -p "$KEYS_DIR"
+    mkdir -p "$KEYS_DIR"
+
     if [ ! -x "$MAKE_KEY" ]; then
         echo "Error: make_key not found at $MAKE_KEY"
         exit 1
@@ -58,25 +59,29 @@ generate_certificates() {
 
     green "\n→ Generating certificates inside $KEYS_DIR..."
 
-    # 🔥 FIX: make_key exits non-zero in non-TTY
     set +e
 
-    for certificate in "${certificates[@]}" "${apex_certificates[@]}"; do
-
-        if [[ " ${certificates[*]} " == *" $certificate "* ]]; then
-            cert_name="$certificate"
-        else
-            safe="${certificate//./_}"
-            cert_name="${safe}.certificate.override"
+    # Generate standard certs (platform, media, shared, etc.)
+    for certificate in "${certificates[@]}"; do
+        if [[ -f "$KEYS_DIR/$certificate.pk8" ]]; then
+            echo "• $certificate already exists → skipped"
+            continue
         fi
+        echo "• Generating $certificate ..."
+        bash "$MAKE_KEY" "$KEYS_DIR/$certificate" "$SUBJECT"
+    done
 
-        if [[ -f "$KEYS_DIR/$cert_name.pk8" || -f "$KEYS_DIR/$cert_name.x509.pem" ]]; then
-            echo "• $cert_name already exists → skipped"
+    # Generate APEX certs (base key only, NOT override name)
+    for apex in "${apex_certificates[@]}"; do
+        safe="${apex//./_}"
+
+        if [[ -f "$KEYS_DIR/$safe.pk8" ]]; then
+            echo "• $safe already exists → skipped"
             continue
         fi
 
-        echo "• Generating $cert_name ..."
-        bash "$MAKE_KEY" "$KEYS_DIR/$cert_name" "$SUBJECT"
+        echo "• Generating $safe ..."
+        bash "$MAKE_KEY" "$KEYS_DIR/$safe" "$SUBJECT"
     done
 
     set -e
@@ -87,7 +92,7 @@ generate_certificates() {
 }
 
 create_releasekey() {
-    if [[ -f "$KEYS_DIR/releasekey.pk8" && -f "$KEYS_DIR/releasekey.x509.pem" ]]; then
+    if [[ -f "$KEYS_DIR/releasekey.pk8" ]]; then
         yellow "→ releasekey already exists — skipping"
         return
     fi
@@ -96,28 +101,39 @@ create_releasekey() {
     bash "$MAKE_KEY" "$KEYS_DIR/releasekey" "$SUBJECT" || true
 }
 
+# ==============================
+# ANDROID.BP GENERATION
+# ==============================
 write_android_bp() {
     green "→ Writing Android.bp..."
+
     {
         for apex in "${apex_certificates[@]}"; do
             safe="${apex//./_}"
+
             echo "android_app_certificate {"
             echo "    name: \"$safe.certificate.override\","
-            echo "    certificate: \"$safe.certificate.override\","
+            echo "    certificate: \"$safe\","
             echo "}"
             echo ""
         done
     } > "$KEYS_DIR/Android.bp"
 }
 
+# ==============================
+# KEYS.MK GENERATION
+# ==============================
 write_product_keys_mk() {
-    green "→ Writing product keys.mk..."
+    green "→ Writing keys.mk..."
+
     {
         echo "PRODUCT_CERTIFICATE_OVERRIDES := \\"
+
         for apex in "${apex_certificates[@]}"; do
             safe="${apex//./_}"
             echo "    $apex:$safe.certificate.override \\"
         done
+
         echo ""
         echo "PRODUCT_DEFAULT_DEV_CERTIFICATE := $KEYS_DIR/releasekey"
         echo "PRODUCT_MAINLINE_BLUETOOTH_SEPOLICY_DEV_CERTIFICATES := \$(dir \$(PRODUCT_DEFAULT_DEV_CERTIFICATE))"

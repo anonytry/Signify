@@ -90,4 +90,10 @@ apex_certificates=(
     com.android.hardware.rebootescrow
     com.android.nfcservices
     com.android.profiling
+    com.android.federatedcompute
+    com.android.health.connect.backuprestore
+    com.android.healthconnect.controller
+    com.android.hardware.thermal
+    com.android.hardware.neuralnetworks
+    com.android.hardware.uwb
 )
