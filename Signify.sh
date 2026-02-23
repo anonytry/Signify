@@ -46,12 +46,42 @@ fi
 # Working directory must remain ROM root
 
 # ==============================================================================
-# SELF UPDATE (SAFE, NO LOOP)
+# SELF UPDATE
 # ==============================================================================
+
+update_prompt() {
+
+    if [[ ! -t 0 ]]; then
+        echo "→ Auto mode detected (non-interactive)"
+        echo "→ Skipping update"
+        return
+    fi
+
+    while true; do
+        echo ""
+        read -p "Do you want to update Signify? (yes/no): " choice
+
+        case "$choice" in
+            yes|y|Y|YES)
+                echo "→ Updating Signify"
+                (cd "$SCRIPT_DIR" && git fetch origin && git reset --hard origin/ota)
+                break
+                ;;
+            no|n|N|NO)
+                echo "→ Skipping update"
+                break
+                ;;
+            *)
+                echo "Invalid input. Please type yes or no."
+                ;;
+        esac
+    done
+}
+
 if [[ -d "$SCRIPT_DIR/.git" ]]; then
-    echo "→ Updating Signify tool"
-    (cd "$SCRIPT_DIR" && git fetch origin && git reset --hard origin/ota)
+    update_prompt
 fi
+
 # ==============================================================================
 
 # ==============================
