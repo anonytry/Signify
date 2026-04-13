@@ -1,134 +1,99 @@
 # SPDX-License-Identifier: Apache-2.0
-# Signify base
+#
+# Signify keys list
+# This file contains ONLY key definitions
 
-[[ "${BASH_SOURCE[0]}" != "$0" ]] || {
-    echo "This file is part of Signify. Do not run directly."
-    exit 1
-}
+certificates=(
+    bluetooth
+    cts_uicc_2021
+    cyngn-app
+    media
+    networkstack
+    nfc
+    platform
+    sdk_sandbox
+    shared
+    testcert
+    testkey
+    verity
+    gmscompat_lib
+    otakey
+)
 
-# ==============================
-# HELPER FUNCTIONS
-# ==============================
-green()  { echo -e "\e[1;32m$1\e[0m"; }
-yellow() { echo -e "\e[1;33m$1\e[0m"; }
-
-confirm() {
-    while true; do
-        read -r -p "$1 (yes/no): " input
-        case "$input" in
-            [yY][eE][sS]|[yY]) echo "yes"; return ;;
-            [nN][oO]|[nN]) echo "no"; return ;;
-        esac
-    done
-}
-
-prompt() {
-    while true; do
-        read -p "$1" input
-        [[ -n "$input" ]] && echo "$input" && return
-    done
-}
-
-prompt_key_size() {
-    while true; do
-        read -p "$1" input
-        [[ "$input" == "2048" || "$input" == "4096" ]] && echo "$input" && return
-    done
-}
-
-# ==============================
-# PATHS (ROM ROOT SAFE)
-# ==============================
-if [[ -z "$ROM_ROOT" ]]; then
-    echo "Error: ROM_ROOT not set. Run Signify from ROM root."
-    exit 1
-fi
-
-MAKE_KEY="$ROM_ROOT/development/tools/make_key"
-
-# ==============================
-# MAIN FUNCTIONS
-# ==============================
-generate_certificates() {
-    mkdir -p "$KEYS_DIR"
-
-    if [ ! -x "$MAKE_KEY" ]; then
-        echo "Error: make_key not found at $MAKE_KEY"
-        exit 1
-    fi
-
-    green "\n→ Generating certificates inside $KEYS_DIR..."
-
-    set +e
-
-    # Standard certs
-    for certificate in "${certificates[@]}"; do
-        if [[ -f "$KEYS_DIR/$certificate.pk8" ]]; then
-            echo "• $certificate already exists → skipped"
-            continue
-        fi
-        echo "• Generating $certificate ..."
-        bash "$MAKE_KEY" "$KEYS_DIR/$certificate" "$SUBJECT"
-    done
-
-    # APEX certs 
-    for apex in "${apex_certificates[@]}"; do
-        safe="${apex//./_}"
-
-        if [[ -f "$KEYS_DIR/$safe.pk8" ]]; then
-            echo "• $safe already exists → skipped"
-            continue
-        fi
-
-        echo "• Generating $safe ..."
-        bash "$MAKE_KEY" "$KEYS_DIR/$safe" "$SUBJECT"
-    done
-
-    set -e
-
-    create_releasekey
-    write_android_bp
-    write_product_keys_mk
-}
-
-create_releasekey() {
-    if [[ -f "$KEYS_DIR/releasekey.pk8" && -f "$KEYS_DIR/releasekey.x509.pem" ]]; then
-        yellow "→ releasekey already exists — skipping"
-        return
-    fi
-
-    green "\n→ Generating releasekey..."
-    bash "$MAKE_KEY" "$KEYS_DIR/releasekey" "$SUBJECT" || true
-}
-
-write_android_bp() {
-    green "→ Writing Android.bp..."
-
-    {
-        for apex in "${apex_certificates[@]}"; do
-            safe="${apex//./_}"
-
-            echo "android_app_certificate {"
-            echo "    name: \"$safe.certificate.override\","
-            echo "    certificate: \"$safe\","
-            echo "}"
-            echo ""
-        done
-    } > "$KEYS_DIR/Android.bp"
-}
-
-write_product_keys_mk() {
-    green "→ Writing product keys.mk..."
-    {
-        echo "PRODUCT_CERTIFICATE_OVERRIDES := \\"
-        for apex in "${apex_certificates[@]}"; do
-            safe="${apex//./_}"
-            echo "    $apex:$safe.certificate.override \\"
-        done
-        echo ""
-        echo "PRODUCT_DEFAULT_DEV_CERTIFICATE := $KEYS_DIR/releasekey"
-        echo "PRODUCT_MAINLINE_BLUETOOTH_SEPOLICY_DEV_CERTIFICATES := \$(dir \$(PRODUCT_DEFAULT_DEV_CERTIFICATE))"
-        echo "PRODUCT_OTA_PUBLIC_KEYS := $KEYS_DIR/otakey.x509.pem"
-        echo "PRODUCT_EXTRA_RECOVERY_KEYS :="
-    } > "$KEYS_DIR/keys.mk"
-}
+apex_certificates=(
+    com.android.adbd
+    com.android.adservices.api
+    com.android.adservices
+    com.android.appsearch
+    com.android.art
+    com.android.bluetooth
+    com.android.btservices
+    com.android.cellbroadcast
+    com.android.compos
+    com.android.configinfrastructure
+    com.android.connectivity.resources
+    com.android.conscrypt
+    com.android.devicelock
+    com.android.extservices
+    com.android.graphics.pdf
+    com.android.hardware.biometrics.face.virtual
+    com.android.hardware.biometrics.fingerprint.virtual
+    com.android.hardware.boot
+    com.android.hardware.cas
+    com.android.hardware.wifi
+    com.android.healthfitness
+    com.android.hotspot2.osulogin
+    com.android.i18n
+    com.android.ipsec
+    com.android.media
+    com.android.mediaprovider
+    com.android.media.swcodec
+    com.android.nearby.halfsheet
+    com.android.networkstack.tethering
+    com.android.neuralnetworks
+    com.android.ondevicepersonalization
+    com.android.os.statsd
+    com.android.permission
+    com.android.resolv
+    com.android.rkpd
+    com.android.runtime
+    com.android.safetycenter.resources
+    com.android.scheduling
+    com.android.sdkext
+    com.android.support.apexer
+    com.android.telephony
+    com.android.telephonymodules
+    com.android.telephonycore
+    com.android.tethering
+    com.android.tzdata
+    com.android.uwb
+    com.android.uwb.resources
+    com.android.virt
+    com.android.vndk.current
+    com.android.wifi
+    com.android.wifi.dialog
+    com.android.wifi.resources
+    com.google.pixel.camera.hal
+    com.google.pixel.vibrator.hal
+    com.qorvo.uwb
+    com.android.hardware.threadnetwork
+    com.android.hardware.vibrator
+    com.android.hardware.contexthub
+    com.android.hardware.gatekeeper.nonsecure
+    com.android.hardware.dumpstate
+    com.android.hardware.power
+    com.android.crashrecovery
+    com.android.uprobestats
+    com.android.bt
+    com.android.appsearch.apk
+    com.android.hardware.authsecret
+    com.android.hardware.rebootescrow
+    com.android.nfcservices
+    com.android.profiling
+    com.android.federatedcompute
+    com.android.health.connect.backuprestore
+    com.android.healthconnect.controller
+    com.android.hardware.thermal
+    com.android.hardware.neuralnetworks
+    com.android.hardware.uwb
+)
