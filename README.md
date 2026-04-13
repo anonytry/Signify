@@ -1,8 +1,23 @@
 # Signify
 
-A simple shell tool to auto-generate and integrate Android ROM signing keys (including APEX).
+Android ROM signing keys generator (standard + APEX) for AOSP / LineageOS.
 
 ---
+
+## ⚡ Quick Start
+```bash
+echo 'no' | bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/ota/Signify.sh)
+```
+---
+
+## ⚙️ Device Integration
+Add to your `device.mk` or `common.mk`:
+```makefile
+$(call inherit-product-if-exists, vendor/signify/keys/keys.mk)
+```
+
+---
+
 
 ## 🔧 Usage
 
@@ -10,44 +25,40 @@ A simple shell tool to auto-generate and integrate Android ROM signing keys (inc
 
 **Manual mode (confirm prompts manually):**
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/main/Signify.sh)
+bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/ota/Signify.sh)
 ```
 
 **Auto mode (skip all prompts):**
 ```bash
-echo "no" | bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/main/Signify.sh)
+echo 'no' | bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/ota/Signify.sh)
 ```
 
 ---
+
 
 ## 📁 Output
-- Keys saved in `vendor/signify/keys`
-- Auto-generated:
+
+- Keys stored in `KEYS_DIR`
+  - Default: `vendor/signify/keys`
+
+- Generated:
+  - `*.pk8`, `*.x509.pem`
   - `Android.bp`
-  - `keys.mk`
-  - Standard + APEX keys  
-  - `releasekey` symlinks
+  - Product `keys.mk`
+  - Standard + APEX certs
+  - `releasekey`
+
+Existing keys are never overwritten.
+
 
 ---
 
-## ⚙️ Device Integration
-Add to your `device.mk` or `common.mk`:
-```makefile
-$(call inherit-product, vendor/signify/keys/keys.mk)
-```
-
-Build normally:
-```bash
-. build/envsetup.sh
-lunch <device>-user
-mka bacon
-```
-
----
 
 ## 🚀 Features
-- Auto key & APEX cert generation  
-- Release-keys ready signing  
-- Skip existing keys  
-- Configurable key path  
-- Works with all AOSP/Lineage-based ROMs
+
+- Auto standard + APEX signing keys
+- Release-keys ready
+- Self-updating (safe clean refresh)
+- Keys never deleted
+- Works with `vendor/signify`, `lineage-priv`, or custom paths
+- AOSP / LineageOS compatible
