@@ -35,6 +35,15 @@ echo 'no' | bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/ot
 
 ---
 
+## 🚩 Flags
+
+| Flag | Description |
+| :--- | :--- |
+| `--force` | **Automated Repair:** Automatically deletes and re-generates only the corrupted/mismatched keys. |
+| `--no-ota` | **Unofficial Mode:** Skips `otakey` generation. Uses AOSP Test-keys for OTA/Recovery signature (Ensures dirty flash success on unofficial builds). |
+
+---
+
 
 ## 📁 Output
 
@@ -43,12 +52,11 @@ echo 'no' | bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/ot
 
 - Generated:
   - `*.pk8`, `*.x509.pem`
-  - `Android.bp`
+  - `Android.bp` (Auto-generated certificates)
   - Product `keys.mk`
-  - Standard + APEX certs
-  - `releasekey`
+  - `check_keys.py` (Stand-alone key validator)
 
-Existing keys are never overwritten.
+Existing keys are never overwritten unless `--force` is used.
 
 
 ---
@@ -56,9 +64,9 @@ Existing keys are never overwritten.
 
 ## 🚀 Features
 
-- Auto standard + APEX signing keys
-- Release-keys ready
-- Self-updating (safe clean refresh)
-- Keys never deleted
-- Works with `vendor/signify`, `lineage-priv`, or custom paths
-- AOSP / LineageOS compatible
+- **Healer Logic:** Automated key validation and repair engine.
+- **Smart APEX:** Forces 4096-bit RSA for APEX modules (Fixes bootloops).
+- **Zero-Interaction:** Patched `make_key` to skip all password prompts.
+- **Modular Layout:** Clean separation of logic and key lists.
+- **OTA Compatibility:** Optional AOSP Test-key mode for easier dirty flashing.
+- **Self-updating:** Safe clean refresh from GitHub.
