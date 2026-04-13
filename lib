@@ -50,7 +50,8 @@ MAKE_KEY="$ROM_ROOT/development/tools/make_key"
 # MAIN FUNCTIONS
 # ==============================
 generate_certificates() {
-	mkdir -p "$KEYS_DIR"
+    mkdir -p "$KEYS_DIR"
+
     if [ ! -x "$MAKE_KEY" ]; then
         echo "Error: make_key not found at $MAKE_KEY"
         exit 1
@@ -58,25 +59,29 @@ generate_certificates() {
 
     green "\n→ Generating certificates inside $KEYS_DIR..."
 
-    # 🔥 FIX: make_key exits non-zero in non-TTY
     set +e
 
-    for certificate in "${certificates[@]}" "${apex_certificates[@]}"; do
-
-        if [[ " ${certificates[*]} " == *" $certificate "* ]]; then
-            cert_name="$certificate"
-        else
-            safe="${certificate//./_}"
-            cert_name="${safe}.certificate.override"
+    # Standard certs
+    for certificate in "${certificates[@]}"; do
+        if [[ -f "$KEYS_DIR/$certificate.pk8" ]]; then
+            echo "• $certificate already exists → skipped"
+            continue
         fi
+        echo "• Generating $certificate ..."
+        bash "$MAKE_KEY" "$KEYS_DIR/$certificate" "$SUBJECT"
+    done
 
-        if [[ -f "$KEYS_DIR/$cert_name.pk8" || -f "$KEYS_DIR/$cert_name.x509.pem" ]]; then
-            echo "• $cert_name already exists → skipped"
+    # APEX certs 
+    for apex in "${apex_certificates[@]}"; do
+        safe="${apex//./_}"
+
+        if [[ -f "$KEYS_DIR/$safe.pk8" ]]; then
+            echo "• $safe already exists → skipped"
             continue
         fi
 
-        echo "• Generating $cert_name ..."
-        bash "$MAKE_KEY" "$KEYS_DIR/$cert_name" "$SUBJECT"
+        echo "• Generating $safe ..."
+        bash "$MAKE_KEY" "$KEYS_DIR/$safe" "$SUBJECT"
     done
 
     set -e
