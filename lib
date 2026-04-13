@@ -103,12 +103,14 @@ create_releasekey() {
 
 write_android_bp() {
     green "→ Writing Android.bp..."
+
     {
         for apex in "${apex_certificates[@]}"; do
             safe="${apex//./_}"
+
             echo "android_app_certificate {"
             echo "    name: \"$safe.certificate.override\","
-            echo "    certificate: \"$safe.certificate.override\","
+            echo "    certificate: \"$safe\","
             echo "}"
             echo ""
         done
