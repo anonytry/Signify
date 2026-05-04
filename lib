@@ -175,7 +175,6 @@ write_product_keys_mk() {
         echo ""
         echo "PRODUCT_DEFAULT_DEV_CERTIFICATE := $KEYS_DIR/releasekey"
         echo "PRODUCT_MAINLINE_BLUETOOTH_SEPOLICY_DEV_CERTIFICATES := \$(dir \$(PRODUCT_DEFAULT_DEV_CERTIFICATE))"
-        echo "PRODUCT_OTA_PUBLIC_KEYS := $KEYS_DIR/otakey.x509.pem"
         echo "PRODUCT_EXTRA_RECOVERY_KEYS :="
         
         if [[ " ${certificates[*]} " =~ " gmscompat_lib " ]]; then

@@ -17,7 +17,6 @@ certificates=(
     testkey
     verity
     gmscompat_lib
-    otakey
 )
 
 apex_certificates=(
