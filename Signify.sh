@@ -10,7 +10,7 @@ set -e
 # ==============================
 # CONFIGURATION
 # ==============================
-KEYS_DIR="vendor/signify/keys"
+KEYS_DIR="vendor/voltage-priv/keys"
 REPO_URL="https://github.com/TopexGuy/Signify.git"
 TOOL_DIR="Signify"
 
