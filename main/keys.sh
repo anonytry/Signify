@@ -15,10 +15,10 @@ for key in $(grep -o :\.\*override keys.mk | sort -u) :gmscompat_lib; do
 done
 
 # Generate keys
-for key in ../../../build/make/target/product/security/*.pk8; do
+for key in ${ROM_ROOT:-../../../}build/make/target/product/security/*.pk8; do
     ./make_key.sh $(basename $key .pk8)
 done
 
 for key in $(grep -o :\.\*override keys.mk | sort -u) :gmscompat_lib; do
-    ./make_key.sh ${key:1} 4096
+    ./make_key.sh ${key:1} ${KEY_SIZE:-4096}
 done

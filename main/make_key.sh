@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set -u
-bash <(sed "s/2048/${2:-2048}/;/Enter password/,+1d" ../../../development/tools/make_key) \
+bash <(sed "s/2048/${2:-2048}/;/Enter password/,+1d" ${ROM_ROOT:-../../../}development/tools/make_key) \
     $1 \
-    '/C=US/ST=California/L=Mountain View/O=Android/OU=Android/CN=Android/emailAddress=android@android.com'
+    "${SUBJECT_INFO:-'/C=US/ST=California/L=Mountain View/O=Android/OU=Android/CN=Android/emailAddress=android@android.com'}"
