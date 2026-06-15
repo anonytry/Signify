@@ -1,10 +1,13 @@
 #!/bin/bash
 # Signify - Advanced ROM Signing Wrapper
 
+# --- User Editable Defaults ---
 export DEFAULT_KEY_SIZE="${DEFAULT_KEY_SIZE:-4096}"
 export DEFAULT_SUBJECT="${DEFAULT_SUBJECT:-/C=US/ST=California/L=Mountain View/O=Android/OU=Android/CN=Android/emailAddress=android@android.com}"
 export KEYS_DIR="${KEYS_DIR:-vendor/signify/keys}"
 export SKIP_OTA="${SKIP_OTA:-false}"
+export TIMEOUT="${TIMEOUT:-20}"
+# ------------------------------
 
 export REPO_URL="https://github.com/anonytry/Signify.git"
 export REPO_BRANCH="16.2"
@@ -24,7 +27,7 @@ if [[ "$SIGNIFY_TMP_ACTIVE" != "true" ]]; then
     export SIGNIFY_REAL_ROOT="$ROM_ROOT"
     bash "$TEMP_DIR/signify.sh" "$@"
     rm -rf "$TEMP_DIR"
-    unset SIGNIFY_TMP_ACTIVE SIGNIFY_REAL_ROOT TEMP_DIR DEFAULT_KEY_SIZE DEFAULT_SUBJECT KEYS_DIR SKIP_OTA KEY_SIZE SUBJECT_INFO AUTO_MODE
+    unset SIGNIFY_TMP_ACTIVE SIGNIFY_REAL_ROOT TEMP_DIR DEFAULT_KEY_SIZE DEFAULT_SUBJECT KEYS_DIR SKIP_OTA KEY_SIZE SUBJECT_INFO AUTO_MODE TIMEOUT
     exit 0
 fi
 
@@ -40,7 +43,8 @@ main() {
     setup_paths
 
     if [[ "$AUTO_MODE" == "false" ]]; then
-        if [[ $(confirm "Generate OTA keys?" "yes") == "no" ]]; then
+        # Default to "no" (meaning SKIP_OTA=true) if timer expires
+        if [[ $(confirm "Generate OTA keys?" "no") == "no" ]]; then
             export SKIP_OTA="true"
         else
             export SKIP_OTA="false"
