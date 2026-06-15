@@ -9,7 +9,7 @@ export SKIP_OTA="false"
 # ------------------------------
 
 # Configuration
-export REPO_URL="https://github.com/TopexGuy/Signify-New.git"
+export REPO_URL="https://github.com/anonytry/Signify.git"
 export REPO_BRANCH="16.2"
 export TOOL_DIR="signify"
 
@@ -41,20 +41,20 @@ check_for_updates() {
     [[ "$AUTO_MODE" == "true" ]] && return
     [[ ! -d "$SCRIPT_DIR/.git" ]] && return
 
-    echo "--> Checking for updates..."
+    echo -e "${YELLOW}--> Checking for updates...${NC}"
     git fetch origin "$REPO_BRANCH" --quiet
     LOCAL_HASH=$(git rev-parse HEAD)
     REMOTE_HASH=$(git rev-parse "origin/$REPO_BRANCH")
 
     if [[ "$LOCAL_HASH" != "$REMOTE_HASH" ]]; then
         if [[ $(confirm_timeout "New update available. Update now?" "no") == "yes" ]]; then
-            echo "--> Updating Signify..."
+            echo -e "${GREEN}--> Updating Signify...${NC}"
             git reset --hard "origin/$REPO_BRANCH"
-            echo "--> Restarting after update..."
+            echo -e "${GREEN}--> Restarting after update...${NC}"
             exec bash "$0" "$@"
         fi
     else
-        echo "--> Signify is up to date."
+        echo -e "${GREEN}--> Signify is up to date.${NC}"
     fi
 }
 
@@ -64,7 +64,7 @@ main() {
     setup_paths
 
     if [[ "$AUTO_MODE" == "false" ]]; then
-        # 1. Self Update (Only if updates actually exist)
+        # 1. Self Update
         check_for_updates
 
         # 2. Skip OTA preference

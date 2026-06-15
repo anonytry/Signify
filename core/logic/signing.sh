@@ -3,9 +3,9 @@
 
 run_signing() {
     echo -e "${GREEN}--> Starting Signing Process${NC}"
-    echo "    Target Directory: $KEYS_DIR"
-    echo "    Key Size: $KEY_SIZE"
-    echo "    Skip OTA: $SKIP_OTA"
+    echo -e "    Target Directory: ${BLUE}$KEYS_DIR${NC}"
+    echo -e "    Key Size: ${BLUE}$KEY_SIZE${NC}"
+    echo -e "    Skip OTA: ${BLUE}$SKIP_OTA${NC}"
 
     # Export for AOSP backend scripts
     export KEYS_DIR="$KEYS_DIR"
@@ -17,6 +17,7 @@ run_signing() {
     bash keys.sh
     popd > /dev/null
     
-    echo -e "${GREEN}\n✓ Signing tasks completed successfully!${NC}"
-    echo "Keys are located in: $KEYS_DIR"
+    echo -e "\n${GREEN}✓ All tasks completed successfully!${NC}"
+    echo -e "Keys saved at: ${BLUE}$KEYS_DIR${NC}"
+    echo -e "🔏 ${YELLOW}Generated with Signify by TopexGuy${NC}"
 }
