@@ -1,5 +1,5 @@
 #!/bin/bash
-# Signify - Advanced ROM Signing Wrapper (Temporary Execution Mode)
+# Signify - Advanced ROM Signing Wrapper (Enhanced Temporary Mode)
 
 # --- User Editable Defaults ---
 export DEFAULT_KEY_SIZE=4096
@@ -11,8 +11,6 @@ export SKIP_OTA="false"
 # Configuration
 export REPO_URL="https://github.com/anonytry/Signify.git"
 export REPO_BRANCH="16.2"
-# Temp directory for one-time execution
-export TEMP_DIR="/tmp/.signify_$(date +%s)"
 
 # Must be run from ROM root
 if [[ ! -f "build/envsetup.sh" ]]; then
@@ -22,26 +20,37 @@ fi
 
 export ROM_ROOT="$(pwd)"
 
-# --- Temporary Execution Bootstrap ---
-# Check if we are already running from a temp location
+# --- Enhanced Temporary Execution Logic ---
+# If running from a remote curl or if SIGNIFY_FORCE_TEMP is set
 if [[ "$SIGNIFY_TMP_ACTIVE" != "true" ]]; then
-    echo -e "\e[1;34m--> Preparing Signify (One-time Use)...\e[0m"
+    
+    # We always clone into a fresh /tmp location to ensure "temporary" behavior
+    # even if a local 'signify' folder exists.
+    export TEMP_DIR="/tmp/.signify_$(date +%s)"
+    
+    echo -e "\e[1;34m--> Preparing Signify (Isolated Session)...\e[0m"
     mkdir -p "$TEMP_DIR"
-    git clone --depth=1 -b "$REPO_BRANCH" "$REPO_URL" "$TEMP_DIR" > /dev/null 2>&1
     
-    # Export flag to prevent infinite loop
+    # Clone and redirect output
+    if ! git clone --depth=1 -b "$REPO_BRANCH" "$REPO_URL" "$TEMP_DIR" > /dev/null 2>&1; then
+        echo "Error: Failed to clone Signify repository."
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+    
+    # Export state to child process
     export SIGNIFY_TMP_ACTIVE="true"
-    export SIGNIFY_REAL_ROOT="$ROM_ROOT"
+    export SIGNIFY_PARENT_DIR="$TEMP_DIR"
     
-    # Run from temp location and clean up after
+    # Run and cleanup
     bash "$TEMP_DIR/signify.sh" "$@"
     
-    echo -e "\e[1;34m--> Cleaning up temporary files...\e[0m"
+    echo -e "\e[1;34m--> Session finished. Cleaning up...\e[0m"
     rm -rf "$TEMP_DIR"
     exit 0
 fi
 
-# --- Execution Logic (Running from Temp) ---
+# --- Execution (Running from Temp) ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Source modular components
@@ -57,7 +66,7 @@ main() {
 
     if [[ "$AUTO_MODE" == "false" ]]; then
         # 1. Skip OTA preference
-        export SKIP_OTA=$(confirm "Skip OTA key generation (Unofficial)?" "$SKIP_OTA")
+        export SKIP_OTA=$(confirm "Skip OTA key generation (Unofficial build)?" "$SKIP_OTA")
 
         # 2. Customization
         if [[ $(confirm "Customize Key Config (Size/Dir/Subject)?" "no") == "yes" ]]; then
@@ -71,7 +80,7 @@ main() {
     export KEY_SIZE="${KEY_SIZE:-$DEFAULT_KEY_SIZE}"
     export SUBJECT_INFO="${SUBJECT_INFO:-$DEFAULT_SUBJECT}"
     export KEYS_DIR="${KEYS_DIR}"
-    export SKIP_OTA="${SKIP_OTA:-false}"
+    export SKIP_OTA="${SKIP_OTA}"
     
     run_signing
 }
