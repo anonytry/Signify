@@ -1,18 +1,16 @@
 #!/bin/bash
-# Signify - Advanced ROM Signing Wrapper (Production Release)
+# Signify - Advanced ROM Signing Wrapper
 
-# --- User Editable Defaults ---
 export DEFAULT_KEY_SIZE="${DEFAULT_KEY_SIZE:-4096}"
 export DEFAULT_SUBJECT="${DEFAULT_SUBJECT:-/C=US/ST=California/L=Mountain View/O=Android/OU=Android/CN=Android/emailAddress=android@android.com}"
 export KEYS_DIR="${KEYS_DIR:-vendor/signify/keys}"
 export SKIP_OTA="${SKIP_OTA:-false}"
-# ------------------------------
 
 export REPO_URL="https://github.com/anonytry/Signify.git"
 export REPO_BRANCH="16.2"
 
 if [[ ! -f "build/envsetup.sh" ]]; then
-    echo "Error: Run this script from the ROM root directory."
+    echo "Error: Run from ROM root"
     exit 1
 fi
 
@@ -21,7 +19,7 @@ export ROM_ROOT="$(pwd)"
 if [[ "$SIGNIFY_TMP_ACTIVE" != "true" ]]; then
     export TEMP_DIR="/tmp/.signify_$(date +%s)"
     mkdir -p "$TEMP_DIR"
-    git clone --depth=1 -b "$REPO_BRANCH" "$REPO_URL" "$TEMP_DIR" > /dev/null 2>&1
+    git clone --depth=1 --single-branch -b "$REPO_BRANCH" "$REPO_URL" "$TEMP_DIR" > /dev/null 2>&1
     export SIGNIFY_TMP_ACTIVE="true"
     export SIGNIFY_REAL_ROOT="$ROM_ROOT"
     bash "$TEMP_DIR/signify.sh" "$@"
@@ -42,16 +40,13 @@ main() {
     setup_paths
 
     if [[ "$AUTO_MODE" == "false" ]]; then
-        # 1. Generate OTA keys? (Simplified)
-        # We invert the logic for the prompt: "Generate OTA?" yes means SKIP_OTA=false
         if [[ $(confirm "Generate OTA keys?" "yes") == "no" ]]; then
             export SKIP_OTA="true"
         else
             export SKIP_OTA="false"
         fi
 
-        # 2. Customization
-        if [[ $(confirm "Customize configuration (Size/Dir/Subject)?" "no") == "yes" ]]; then
+        if [[ $(confirm "Customize configuration?" "no") == "yes" ]]; then
             export KEY_SIZE=$(prompt_default "Key Size" "$DEFAULT_KEY_SIZE")
             export KEYS_DIR=$(prompt_default "Keys Directory" "$KEYS_DIR")
             export SUBJECT_INFO=$(prompt_default "Subject Info" "$DEFAULT_SUBJECT")
