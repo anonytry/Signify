@@ -10,7 +10,7 @@ export SKIP_OTA="false"
 
 # Configuration
 export REPO_URL="https://github.com/TopexGuy/Signify-New.git"
-export REPO_BRANCH="16.2" # Set your branch here
+export REPO_BRANCH="16.2"
 export TOOL_DIR="signify"
 
 # Must be run from ROM root
@@ -19,10 +19,9 @@ if [[ ! -f "build/envsetup.sh" ]]; then
     exit 1
 fi
 
-# Set ROM_ROOT immediately
 export ROM_ROOT="$(pwd)"
 
-# --- Bootstrap Logic ---
+# --- Bootstrap & Self-Update Logic ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ "$(basename "$SCRIPT_DIR")" != "$TOOL_DIR" ]]; then
     if [[ ! -d "$TOOL_DIR/.git" ]]; then
@@ -32,7 +31,7 @@ if [[ "$(basename "$SCRIPT_DIR")" != "$TOOL_DIR" ]]; then
     exec bash "$TOOL_DIR/signify.sh" "$@"
 fi
 
-# --- Modular Execution ---
+# Modular components source
 source "$SCRIPT_DIR/core/ui/colors.sh"
 source "$SCRIPT_DIR/core/utils/helpers.sh"
 source "$SCRIPT_DIR/core/logic/config.sh"
@@ -44,27 +43,31 @@ main() {
     setup_paths
 
     if [[ "$AUTO_MODE" == "false" ]]; then
-        # 1. Self Update Prompt (Default: no)
+        # 1. Self Update (Only once at start)
         if [[ -d "$SCRIPT_DIR/.git" ]]; then
             if [[ $(confirm_timeout "Do you want to check for updates?" "no") == "yes" ]]; then
-                echo "--> Checking for updates..."
+                echo "--> Updating Signify..."
                 (cd "$SCRIPT_DIR" && git fetch origin && git reset --hard origin/"$REPO_BRANCH")
+                echo "--> Restarting after update..."
+                exec bash "$0" "$@"
             fi
         fi
 
-        # 2. Key Customization (Default: no, meaning use defaults)
-        if [[ $(confirm_timeout "Do you want to customize key configuration?" "no") == "yes" ]]; then
+        # 2. Skip OTA preference (Always ask first)
+        export SKIP_OTA=$(confirm_timeout "Skip OTA key generation (Unofficial build)?" "$SKIP_OTA")
+
+        # 3. Further Customization (Optional)
+        if [[ $(confirm_timeout "Do you want to customize other settings (Key size/Subject)?" "no") == "yes" ]]; then
             export KEY_SIZE=$(prompt_default_timeout "Enter key size" "$DEFAULT_KEY_SIZE")
             export SUBJECT_INFO=$(prompt_default_timeout "Enter subject info" "$DEFAULT_SUBJECT")
             export KEYS_DIR=$(prompt_default_timeout "Enter keys directory" "$KEYS_DIR")
-            export SKIP_OTA=$(confirm_timeout "Skip OTA key generation (Unofficial build)?" "no")
         fi
     fi
 
-    # Finalize variables for backend
+    # Finalize variables
     export KEY_SIZE="${KEY_SIZE:-$DEFAULT_KEY_SIZE}"
     export SUBJECT_INFO="${SUBJECT_INFO:-$DEFAULT_SUBJECT}"
-    export SKIP_OTA="${SKIP_OTA:-$DEFAULT_OTA_CHOICE:-false}"
+    export SKIP_OTA="${SKIP_OTA:-false}"
     
     run_signing
 }
