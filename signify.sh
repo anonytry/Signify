@@ -37,26 +37,40 @@ source "$SCRIPT_DIR/core/utils/helpers.sh"
 source "$SCRIPT_DIR/core/logic/config.sh"
 source "$SCRIPT_DIR/core/logic/signing.sh"
 
+check_for_updates() {
+    [[ "$AUTO_MODE" == "true" ]] && return
+    [[ ! -d "$SCRIPT_DIR/.git" ]] && return
+
+    echo "--> Checking for updates..."
+    git fetch origin "$REPO_BRANCH" --quiet
+    LOCAL_HASH=$(git rev-parse HEAD)
+    REMOTE_HASH=$(git rev-parse "origin/$REPO_BRANCH")
+
+    if [[ "$LOCAL_HASH" != "$REMOTE_HASH" ]]; then
+        if [[ $(confirm_timeout "New update available. Update now?" "no") == "yes" ]]; then
+            echo "--> Updating Signify..."
+            git reset --hard "origin/$REPO_BRANCH"
+            echo "--> Restarting after update..."
+            exec bash "$0" "$@"
+        fi
+    else
+        echo "--> Signify is up to date."
+    fi
+}
+
 main() {
     print_banner
     detect_mode "$@"
     setup_paths
 
     if [[ "$AUTO_MODE" == "false" ]]; then
-        # 1. Self Update (Only once at start)
-        if [[ -d "$SCRIPT_DIR/.git" ]]; then
-            if [[ $(confirm_timeout "Do you want to check for updates?" "no") == "yes" ]]; then
-                echo "--> Updating Signify..."
-                (cd "$SCRIPT_DIR" && git fetch origin && git reset --hard origin/"$REPO_BRANCH")
-                echo "--> Restarting after update..."
-                exec bash "$0" "$@"
-            fi
-        fi
+        # 1. Self Update (Only if updates actually exist)
+        check_for_updates
 
-        # 2. Skip OTA preference (Always ask first)
+        # 2. Skip OTA preference
         export SKIP_OTA=$(confirm_timeout "Skip OTA key generation (Unofficial build)?" "$SKIP_OTA")
 
-        # 3. Further Customization (Optional)
+        # 3. Further Customization
         if [[ $(confirm_timeout "Do you want to customize other settings (Key size/Subject)?" "no") == "yes" ]]; then
             export KEY_SIZE=$(prompt_default_timeout "Enter key size" "$DEFAULT_KEY_SIZE")
             export SUBJECT_INFO=$(prompt_default_timeout "Enter subject info" "$DEFAULT_SUBJECT")
