@@ -11,7 +11,7 @@ confirm() {
     # Clean prompt
     printf "${YELLOW}?? ${prompt_msg} [y/n]: ${NC}" >&2
     
-    # Silent timeout: no message, just proceed
+    # Silent timeout
     read -r -t $timeout input
     local exit_code=$?
 
