@@ -4,18 +4,18 @@
 confirm() {
     local prompt_msg="$1"
     local default_choice="$2"
-    local timeout=20 # Manageable 20s timeout
+    local timeout=20
 
     [[ "$AUTO_MODE" == "true" ]] && echo "$default_choice" && return
 
-    # Clean prompt: no visible timer but backend timeout active
+    # Clean prompt
     printf "${YELLOW}?? ${prompt_msg} [y/n]: ${NC}" >&2
     
+    # Silent timeout: no message, just proceed
     read -r -t $timeout input
     local exit_code=$?
 
     if [[ $exit_code -gt 128 ]]; then
-        # Silent timeout: just use default and move on
         echo "$default_choice"
         return
     fi

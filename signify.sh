@@ -1,12 +1,12 @@
 #!/bin/bash
-# Signify - Advanced ROM Signing Wrapper (Enhanced Temporary Mode)
+# Signify - Advanced ROM Signing Wrapper (The Ghost Tool)
 
-# --- User Editable Defaults ---
-export DEFAULT_KEY_SIZE=4096
-export DEFAULT_SUBJECT="/C=US/ST=California/L=Mountain View/O=Android/OU=Android/CN=Android/emailAddress=android@android.com"
-export KEYS_DIR="vendor/los/keys"
-export SKIP_OTA="false"
-# ------------------------------
+# --- User Editable Defaults (Supports Environment Overrides) ---
+export DEFAULT_KEY_SIZE="${DEFAULT_KEY_SIZE:-4096}"
+export DEFAULT_SUBJECT="${DEFAULT_SUBJECT:-/C=US/ST=California/L=Mountain View/O=Android/OU=Android/CN=Android/emailAddress=android@android.com}"
+export KEYS_DIR="${KEYS_DIR:-vendor/los/keys}"
+export SKIP_OTA="${SKIP_OTA:-false}"
+# -------------------------------------------------------------
 
 # Configuration
 export REPO_URL="https://github.com/anonytry/Signify.git"
@@ -20,12 +20,11 @@ fi
 
 export ROM_ROOT="$(pwd)"
 
-# --- Enhanced Temporary Execution Logic ---
+# --- Enhanced Ghost Execution Logic ---
 # If running from a remote curl or if SIGNIFY_FORCE_TEMP is set
 if [[ "$SIGNIFY_TMP_ACTIVE" != "true" ]]; then
     
-    # We always clone into a fresh /tmp location to ensure "temporary" behavior
-    # even if a local 'signify' folder exists.
+    # Generate unique temp directory
     export TEMP_DIR="/tmp/.signify_$(date +%s)"
     
     echo -e "\e[1;34m--> Preparing Signify (Isolated Session)...\e[0m"
@@ -76,10 +75,10 @@ main() {
         fi
     fi
 
-    # Finalize variables
+    # Finalize variables (Prioritize the ones set in main over defaults)
     export KEY_SIZE="${KEY_SIZE:-$DEFAULT_KEY_SIZE}"
     export SUBJECT_INFO="${SUBJECT_INFO:-$DEFAULT_SUBJECT}"
-    export KEYS_DIR="${KEYS_DIR}"
+    export KEYS_DIR="${KEYS_DIR}" # Already handled by top level export and customization
     export SKIP_OTA="${SKIP_OTA}"
     
     run_signing
