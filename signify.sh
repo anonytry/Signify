@@ -4,7 +4,7 @@
 # --- User Editable Defaults ---
 export DEFAULT_KEY_SIZE=4096
 export DEFAULT_SUBJECT="/C=US/ST=California/L=Mountain View/O=Android/OU=Android/CN=Android/emailAddress=android@android.com"
-export KEYS_DIR="vendor/signify/keys"
+export KEYS_DIR="vendor/los/keys"
 export SKIP_OTA="false"
 # ------------------------------
 
@@ -22,7 +22,6 @@ fi
 export ROM_ROOT="$(pwd)"
 
 # --- Bootstrap & Absolute Pathing ---
-# Ensure SCRIPT_DIR is absolute to avoid git errors
 RELATIVE_SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 export SCRIPT_DIR="$(cd "$RELATIVE_SCRIPT_DIR" && pwd)"
 
@@ -52,7 +51,7 @@ check_for_updates() {
 
     if [[ "$LOCAL_HASH" != "$REMOTE_HASH" ]]; then
         echo -e "${BLUE}[Update Available]${NC}" >&2
-        if [[ $(confirm_timeout "Update Signify now?" "no") == "yes" ]]; then
+        if [[ $(confirm "Update Signify now?" "no") == "yes" ]]; then
             echo -e "${GREEN}--> Updating...${NC}"
             (cd "$SCRIPT_DIR" && git reset --hard "origin/$REPO_BRANCH")
             echo -e "${GREEN}--> Restarting...${NC}"
@@ -66,27 +65,30 @@ check_for_updates() {
 main() {
     print_banner
     detect_mode "$@"
-    setup_paths # Sets up default KEYS_DIR
+    
+    # We honor the editable default set at the top
+    export KEYS_DIR="${KEYS_DIR}"
+    setup_paths # Ensures directory exists
 
     if [[ "$AUTO_MODE" == "false" ]]; then
         # 1. Self Update
         check_for_updates
 
         # 2. Skip OTA
-        export SKIP_OTA=$(confirm_timeout "Skip OTA key generation (Unofficial)?" "$SKIP_OTA")
+        export SKIP_OTA=$(confirm "Skip OTA key generation (Unofficial)?" "$SKIP_OTA")
 
         # 3. Customization
-        if [[ $(confirm_timeout "Customize Key Config (Size/Dir/Subject)?" "no") == "yes" ]]; then
-            export KEY_SIZE=$(prompt_default_timeout "Key Size" "$DEFAULT_KEY_SIZE")
-            export KEYS_DIR=$(prompt_default_timeout "Keys Directory" "$KEYS_DIR")
-            export SUBJECT_INFO=$(prompt_default_timeout "Subject Info" "$DEFAULT_SUBJECT")
+        if [[ $(confirm "Customize Key Config (Size/Dir/Subject)?" "no") == "yes" ]]; then
+            export KEY_SIZE=$(prompt_default "Key Size" "$DEFAULT_KEY_SIZE")
+            export KEYS_DIR=$(prompt_default "Keys Directory" "$KEYS_DIR")
+            export SUBJECT_INFO=$(prompt_default "Subject Info" "$DEFAULT_SUBJECT")
         fi
     fi
 
     # Finalize variables
     export KEY_SIZE="${KEY_SIZE:-$DEFAULT_KEY_SIZE}"
     export SUBJECT_INFO="${SUBJECT_INFO:-$DEFAULT_SUBJECT}"
-    export KEYS_DIR="${KEYS_DIR:-vendor/signify/keys}"
+    export KEYS_DIR="${KEYS_DIR}"
     export SKIP_OTA="${SKIP_OTA:-false}"
     
     run_signing
