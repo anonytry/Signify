@@ -1,13 +1,15 @@
 #!/bin/bash
 # AOSP Key Generation Backend
 
-# Set working directory to KEYS_DIR (absolute or relative to ROM root)
+# Set working directory to KEYS_DIR
 TARGET_DIR="${ROM_ROOT}/${KEYS_DIR}"
 mkdir -p "${TARGET_DIR}"
 
-# --- Makefile Parsing ---
-# NOTE: We DO NOT 'source' keys.mk anymore to avoid "command not found" errors.
-# We extract override certificates using grep/regex.
+# --- Makefile Handling ---
+# Copy the original keys.mk to the target directory as requested
+cp ./keys.mk "${TARGET_DIR}/keys.mk"
+
+# Extract override certificates for Android.bp and generation
 OVERRIDE_CERTS=$(grep -oP '(?<=:)[^\\\s]+(?=\s|\\|$)' keys.mk | sort -u)
 
 # Generate Android.bp
@@ -25,7 +27,6 @@ done
 
 # Check if gmscompat_lib is mentioned
 GMS_COMPAT=$(grep -c "gmscompat_lib" keys.mk)
-
 if [[ $GMS_COMPAT -gt 0 ]]; then
     {
         echo ""
@@ -37,34 +38,41 @@ if [[ $GMS_COMPAT -gt 0 ]]; then
 fi
 
 # --- Key Generation Phase ---
-# Using colors from core/ui/colors.sh (which are exported)
-echo -e "\n${BLUE}--> Generating keys in $TARGET_DIR...${NC}"
+echo -e "\n${BLUE}--> Processing keys in: ${NC}${TARGET_DIR}"
+
+# Function to generate if not exists
+gen_key() {
+    local name=$1
+    local path="${TARGET_DIR}/${name}"
+    
+    if [[ -f "${path}.pk8" ]]; then
+        echo -e "    ${YELLOW}[EXISTS]${NC} $name"
+    else
+        echo -e "    ${GREEN}[GEN]${NC} $name"
+        ./make_key.sh "$path" "${KEY_SIZE:-4096}" > /dev/null 2>&1
+    fi
+}
 
 # 1. Standard AOSP keys
 for key in "${ROM_ROOT}/build/make/target/product/security/"*.pk8; do
     keyname=$(basename "$key" .pk8)
     
-    # Check for OTA skip
     if [[ "$SKIP_OTA" == "true" || "$SKIP_OTA" == "yes" ]]; then
         if [[ "$keyname" == "otakey" ]]; then
-            echo -e "    ${YELLOW}[SKIPPED]${NC} $keyname (Unofficial build)"
+            echo -e "    ${YELLOW}[SKIPPED]${NC} $keyname"
             continue
         fi
     fi
 
-    # Actively generate
-    echo -e "    ${GREEN}[GEN]${NC} $keyname"
-    ./make_key.sh "${TARGET_DIR}/${keyname}" "${KEY_SIZE:-4096}"
+    gen_key "$keyname"
 done
 
 # 2. Override keys
 for cert in $OVERRIDE_CERTS; do
-    echo -e "    ${GREEN}[GEN]${NC} $cert (Override)"
-    ./make_key.sh "${TARGET_DIR}/$cert" "${KEY_SIZE:-4096}"
+    gen_key "$cert"
 done
 
 # 3. gmscompat_lib
 if [[ $GMS_COMPAT -gt 0 ]]; then
-     echo -e "    ${GREEN}[GEN]${NC} gmscompat_lib"
-     ./make_key.sh "${TARGET_DIR}/gmscompat_lib" "${KEY_SIZE:-4096}"
+     gen_key "gmscompat_lib"
 fi

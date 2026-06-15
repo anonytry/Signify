@@ -21,11 +21,14 @@ fi
 
 export ROM_ROOT="$(pwd)"
 
-# --- Bootstrap & Self-Update Logic ---
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# --- Bootstrap & Absolute Pathing ---
+# Ensure SCRIPT_DIR is absolute to avoid git errors
+RELATIVE_SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+export SCRIPT_DIR="$(cd "$RELATIVE_SCRIPT_DIR" && pwd)"
+
 if [[ "$(basename "$SCRIPT_DIR")" != "$TOOL_DIR" ]]; then
     if [[ ! -d "$TOOL_DIR/.git" ]]; then
-        echo "--> Cloning Signify ($REPO_BRANCH) into $TOOL_DIR"
+        echo -e "\e[1;34m--> Cloning Signify into $TOOL_DIR\e[0m"
         git clone --depth=1 -b "$REPO_BRANCH" "$REPO_URL" "$TOOL_DIR"
     fi
     exec bash "$TOOL_DIR/signify.sh" "$@"
@@ -41,46 +44,49 @@ check_for_updates() {
     [[ "$AUTO_MODE" == "true" ]] && return
     [[ ! -d "$SCRIPT_DIR/.git" ]] && return
 
-    echo -e "${YELLOW}--> Checking for updates...${NC}"
-    git fetch origin "$REPO_BRANCH" --quiet
-    LOCAL_HASH=$(git rev-parse HEAD)
-    REMOTE_HASH=$(git rev-parse "origin/$REPO_BRANCH")
+    printf "${YELLOW}--> Checking for updates... ${NC}" >&2
+    (cd "$SCRIPT_DIR" && git fetch origin "$REPO_BRANCH" --quiet)
+    
+    LOCAL_HASH=$(cd "$SCRIPT_DIR" && git rev-parse HEAD)
+    REMOTE_HASH=$(cd "$SCRIPT_DIR" && git rev-parse "origin/$REPO_BRANCH")
 
     if [[ "$LOCAL_HASH" != "$REMOTE_HASH" ]]; then
-        if [[ $(confirm_timeout "New update available. Update now?" "no") == "yes" ]]; then
-            echo -e "${GREEN}--> Updating Signify...${NC}"
-            git reset --hard "origin/$REPO_BRANCH"
-            echo -e "${GREEN}--> Restarting after update...${NC}"
-            exec bash "$0" "$@"
+        echo -e "${BLUE}[Update Available]${NC}" >&2
+        if [[ $(confirm_timeout "Update Signify now?" "no") == "yes" ]]; then
+            echo -e "${GREEN}--> Updating...${NC}"
+            (cd "$SCRIPT_DIR" && git reset --hard "origin/$REPO_BRANCH")
+            echo -e "${GREEN}--> Restarting...${NC}"
+            exec bash "$SCRIPT_DIR/signify.sh" "$@"
         fi
     else
-        echo -e "${GREEN}--> Signify is up to date.${NC}"
+        echo -e "${GREEN}[Up to date]${NC}" >&2
     fi
 }
 
 main() {
     print_banner
     detect_mode "$@"
-    setup_paths
+    setup_paths # Sets up default KEYS_DIR
 
     if [[ "$AUTO_MODE" == "false" ]]; then
         # 1. Self Update
         check_for_updates
 
-        # 2. Skip OTA preference
-        export SKIP_OTA=$(confirm_timeout "Skip OTA key generation (Unofficial build)?" "$SKIP_OTA")
+        # 2. Skip OTA
+        export SKIP_OTA=$(confirm_timeout "Skip OTA key generation (Unofficial)?" "$SKIP_OTA")
 
-        # 3. Further Customization
-        if [[ $(confirm_timeout "Do you want to customize other settings (Key size/Subject)?" "no") == "yes" ]]; then
-            export KEY_SIZE=$(prompt_default_timeout "Enter key size" "$DEFAULT_KEY_SIZE")
-            export SUBJECT_INFO=$(prompt_default_timeout "Enter subject info" "$DEFAULT_SUBJECT")
-            export KEYS_DIR=$(prompt_default_timeout "Enter keys directory" "$KEYS_DIR")
+        # 3. Customization
+        if [[ $(confirm_timeout "Customize Key Config (Size/Dir/Subject)?" "no") == "yes" ]]; then
+            export KEY_SIZE=$(prompt_default_timeout "Key Size" "$DEFAULT_KEY_SIZE")
+            export KEYS_DIR=$(prompt_default_timeout "Keys Directory" "$KEYS_DIR")
+            export SUBJECT_INFO=$(prompt_default_timeout "Subject Info" "$DEFAULT_SUBJECT")
         fi
     fi
 
     # Finalize variables
     export KEY_SIZE="${KEY_SIZE:-$DEFAULT_KEY_SIZE}"
     export SUBJECT_INFO="${SUBJECT_INFO:-$DEFAULT_SUBJECT}"
+    export KEYS_DIR="${KEYS_DIR:-vendor/signify/keys}"
     export SKIP_OTA="${SKIP_OTA:-false}"
     
     run_signing
