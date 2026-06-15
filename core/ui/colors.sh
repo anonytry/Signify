@@ -1,6 +1,5 @@
 #!/bin/bash
-# Colors and UI Components
-
+# Colors and UI Components (Exported for sub-shells)
 export RED='\e[1;31m'
 export GREEN='\e[1;32m'
 export YELLOW='\e[1;33m'
