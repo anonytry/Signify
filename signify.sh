@@ -21,7 +21,6 @@ fi
 export ROM_ROOT="$(pwd)"
 
 # --- Enhanced Ghost Execution Logic ---
-# If running from a remote curl or if SIGNIFY_FORCE_TEMP is set
 if [[ "$SIGNIFY_TMP_ACTIVE" != "true" ]]; then
     
     # Generate unique temp directory
@@ -39,9 +38,10 @@ if [[ "$SIGNIFY_TMP_ACTIVE" != "true" ]]; then
     
     # Export state to child process
     export SIGNIFY_TMP_ACTIVE="true"
-    export SIGNIFY_PARENT_DIR="$TEMP_DIR"
+    export SIGNIFY_REAL_ROOT="$ROM_ROOT"
     
     # Run and cleanup
+    # We pass all arguments and environment variables
     bash "$TEMP_DIR/signify.sh" "$@"
     
     echo -e "\e[1;34m--> Session finished. Cleaning up...\e[0m"
@@ -50,6 +50,7 @@ if [[ "$SIGNIFY_TMP_ACTIVE" != "true" ]]; then
 fi
 
 # --- Execution (Running from Temp) ---
+export ROM_ROOT="${SIGNIFY_REAL_ROOT:-$ROM_ROOT}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Source modular components
@@ -78,7 +79,7 @@ main() {
     # Finalize variables (Prioritize the ones set in main over defaults)
     export KEY_SIZE="${KEY_SIZE:-$DEFAULT_KEY_SIZE}"
     export SUBJECT_INFO="${SUBJECT_INFO:-$DEFAULT_SUBJECT}"
-    export KEYS_DIR="${KEYS_DIR}" # Already handled by top level export and customization
+    export KEYS_DIR="${KEYS_DIR}"
     export SKIP_OTA="${SKIP_OTA}"
     
     run_signing
