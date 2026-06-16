@@ -24,7 +24,7 @@ if [[ "$SIGNIFY_TMP_ACTIVE" != "true" ]]; then
     export SIGNIFY_TMP_ACTIVE="true"
     export SIGNIFY_REAL_ROOT="$ROM_ROOT"
     
-    # Explicitly pass environment to subshell
+    # Export current env to subshell
     KEYS_DIR="$KEYS_DIR" SKIP_OTA="$SKIP_OTA" bash "$TEMP_DIR/signify.sh" "$@"
     
     rm -rf "$TEMP_DIR"
