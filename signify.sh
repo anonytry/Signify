@@ -8,7 +8,7 @@ export SKIP_OTA="${SKIP_OTA:-false}"
 export TIMEOUT="${TIMEOUT:-20}"
 
 export REPO_URL="https://github.com/anonytry/Signify.git"
-export REPO_BRANCH="16.2"
+export REPO_BRANCH="bak"
 
 if [[ ! -f "build/envsetup.sh" ]]; then
     echo "Error: Run from ROM root"
