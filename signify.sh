@@ -7,7 +7,7 @@ export KEYS_DIR="${KEYS_DIR:-vendor/signify/keys}"
 export SKIP_OTA="${SKIP_OTA:-false}"
 export TIMEOUT="${TIMEOUT:-20}"
 
-export REPO_URL="https://github.com/TopexGuy/Signify.git"
+export REPO_URL="https://github.com/anonytry/Signify.git"
 export REPO_BRANCH="main"
 
 if [[ ! -f "build/envsetup.sh" ]]; then

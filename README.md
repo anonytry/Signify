@@ -54,7 +54,7 @@ bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/main/signify.s
 **Advanced Configuration:**
 Pass environment variables to customize the process.
 ```bash
-KEYS_DIR="vendor/lineage-priv/keys" KEY_SIZE=4096 SKIP_OTA=true bash <(curl -s https://raw.githubusercontent.com/TopexGuy/Signify/main/signify.sh) --auto
+KEYS_DIR="vendor/voltage-priv/keys" SKIP_OTA=true bash <(curl -s https://raw.githubusercontent.com/anonytry/Signify/main/signify.sh) --auto
 ```
 
 | Variable | Default | Description |
